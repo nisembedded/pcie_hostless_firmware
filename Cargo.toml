@@ -1,0 +1,29 @@
+[package]
+name = "pcie_hostless_firmware"
+version = "0.1.0"
+edition = "2021"
+authors = ["Boris Vinogradov <nisembedded@gmail.com>"]
+description = "Hostless PCIe firmware for rp235x"
+license = "Apache-2.0"
+keywords = ["embedded", "rp235x", "pcie", "hostless"]
+repository = "https://github.com/nisembedded/rp2350-pcie-hostless_firmware"
+homepage = "https://nisembedded.github.io/"
+
+[dependencies]
+cortex-m = "0.7.2"
+cortex-m-rt = "0.7.5"
+cortex-m-rtic = "1.1.4"
+critical-section = "1.2.0"
+defmt = "1.0.1"
+defmt-rtt = "1.0.0"
+embedded-hal = "1.0.0"
+embedded-hal-async = "1.0.0"
+embedded-io = "0.6.1"
+nb = "1.1.0"
+panic-halt = "1.0.0"
+rp235x-hal = { version = "0.3.0", features = ["binary-info", "critical-section-impl", "rt", "defmt"] }
+rp-binary-info = "0.1.1"
+static_cell = "2.1.0"
+
+[target.'cfg( target_arch = "arm" )'.dependencies]
+embassy-executor = {version = "0.7.0", features = ["arch-cortex-m", "executor-thread"]}
