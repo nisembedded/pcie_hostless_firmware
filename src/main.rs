@@ -1,16 +1,12 @@
+// Used for testing blinking with RTIC
 #![no_std]
 #![no_main]
 
 use rtic_monotonics::rp235x::prelude::*;
 
-use panic_halt as _;
-
 use rp235x_hal as hal;
 
 rp235x_timer_monotonic!(Mono);
-
-// Some things we need
-use embedded_hal::delay::DelayNs;
 
 /// Tell the Boot ROM about our application
 #[link_section = ".start_block"]
@@ -28,12 +24,20 @@ pub static PICOTOOL_ENTRIES: [hal::binary_info::EntryAddr; 5] = [
 ];
 
 /// External high frequency oscillator
-const HFXO_FREQ: u32 = 12_000_000;
+const HFXO_FREQ: u32 = 12_000_000u32;
 
 // Application
 #[rtic::app(device = rp235x_hal::pac)]
 mod app {
     use super::*;
+    use panic_halt as _;
+    use embedded_hal_0_2::digital::v2::{OutputPin, ToggleableOutputPin};
+    use rp235x_hal::{
+        clocks,
+        gpio::{self, bank0::Gpio25, FunctionSio, PullDown, SioOutput},
+        sio::Sio,
+        watchdog::Watchdog,
+    };
 
     #[shared]
     struct Shared {
@@ -42,6 +46,7 @@ mod app {
     #[local]
     struct Local {
         // Local resources go here
+        led: gpio::Pin<Gpio25, FunctionSio<SioOutput>, PullDown>,
     }
 
     #[init()]
@@ -51,35 +56,48 @@ mod app {
         // Set up the monotonic timer
         let _mono = Mono::start(ctx.device.TIMER0, &mut ctx.device.RESETS);
 
-        // Initialize the peripherals
-        let mut pac = hal::pac::Peripherals::take().unwrap();
-
         // Set up the watchdog driver - needed for the clock setup code
-        let mut watchdog = hal::Watchdog::new(pac.WATCHDOG);
+        let mut watchdog = Watchdog::new(ctx.device.WATCHDOG);
 
         // Configure the clocks
-        let _clocks = hal::clocks::init_clocks_and_plls(
+        let _clocks = clocks::init_clocks_and_plls(
             HFXO_FREQ,
-            pac.XOSC,
-            pac.CLOCKS,
-            pac.PLL_SYS,
-            pac.PLL_USB,
-            &mut pac.RESETS,
+            ctx.device.XOSC,
+            ctx.device.CLOCKS,
+            ctx.device.PLL_SYS,
+            ctx.device.PLL_USB,
+            &mut ctx.device.RESETS,
             &mut watchdog,
         )
+        .ok()
         .unwrap();
 
         // Set up the GPIO pins
-        let sio = hal::Sio::new(pac.SIO);
-        let _pins = hal::gpio::Pins::new(
-            pac.IO_BANK0,
-            pac.PADS_BANK0,
+        let sio = Sio::new(ctx.device.SIO);
+        let pins = gpio::Pins::new(
+            ctx.device.IO_BANK0,
+            ctx.device.PADS_BANK0,
             sio.gpio_bank0,
-            &mut pac.RESETS,
+            &mut ctx.device.RESETS,
         );
+        let mut led = pins.gpio25.into_push_pull_output();
+        led.set_low().unwrap();
+
+        // Spawn heartbeat task
+        heartbeat::spawn().ok();
 
         // Waiting for a stabilize power processes
 
-        (Shared {}, Local {})
+        (Shared {}, Local { led })
+    }
+
+    #[task(local = [led])]
+    async fn heartbeat(ctx: heartbeat::Context) {
+        loop {
+            _ = ctx.local.led.toggle();
+
+            Mono::delay(250.millis()).await;
+            // Wait for 250ms
+        }
     }
 }
