@@ -34,7 +34,7 @@ mod app {
     use embedded_hal_0_2::digital::v2::{OutputPin, ToggleableOutputPin};
     use rp235x_hal::{
         clocks,
-        gpio::{self, bank0::Gpio25, FunctionSio, PullDown, SioOutput},
+        gpio::{self, bank0::Gpio1, FunctionSio, PullDown, SioOutput},
         sio::Sio,
         watchdog::Watchdog,
     };
@@ -46,7 +46,7 @@ mod app {
     #[local]
     struct Local {
         // Local resources go here
-        led: gpio::Pin<Gpio25, FunctionSio<SioOutput>, PullDown>,
+        led: gpio::Pin<Gpio1, FunctionSio<SioOutput>, PullDown>,
     }
 
     #[init()]
@@ -80,7 +80,7 @@ mod app {
             sio.gpio_bank0,
             &mut ctx.device.RESETS,
         );
-        let mut led = pins.gpio25.into_push_pull_output();
+        let mut led = pins.gpio1.into_push_pull_output();
         led.set_low().unwrap();
 
         // Spawn heartbeat task
