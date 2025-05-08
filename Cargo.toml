@@ -17,6 +17,7 @@ defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 embedded-hal = "1.0.0"
 embedded-hal-async = "1.0.0"
+embedded_hal_0_2 = {package = "embedded-hal", version = "0.2.5", features = ["unproven"]}
 embedded-io = "0.6.1"
 nb = "1.1.0"
 panic-halt = "1.0.0"
