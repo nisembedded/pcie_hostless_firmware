@@ -12,7 +12,6 @@ homepage = "https://nisembedded.github.io/"
 [dependencies]
 cortex-m = "0.7.2"
 cortex-m-rt = "0.7.5"
-cortex-m-rtic = "1.1.4"
 critical-section = "1.2.0"
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
@@ -24,6 +23,9 @@ panic-halt = "1.0.0"
 rp235x-hal = { version = "0.3.0", features = ["binary-info", "critical-section-impl", "rt", "defmt"] }
 rp-binary-info = "0.1.1"
 static_cell = "2.1.0"
+
+rtic = { version="2.0.3", features = ["thumbv8main-backend"] }
+rtic-monotonics = { version="2.0.3", features = ["rp235x"] }
 
 [target.'cfg( target_arch = "arm" )'.dependencies]
 embassy-executor = {version = "0.7.0", features = ["arch-cortex-m", "executor-thread"]}
