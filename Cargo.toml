@@ -28,5 +28,7 @@ static_cell = "2.1.0"
 rtic = { version="2.0.3", features = ["thumbv8main-backend"] }
 rtic-monotonics = { version="2.0.3", features = ["rp235x"] }
 
+panic-probe = { version = "1.0.0", features = ["defmt"] }
+
 [target.'cfg( target_arch = "arm" )'.dependencies]
 embassy-executor = {version = "0.7.0", features = ["arch-cortex-m", "executor-thread"]}
