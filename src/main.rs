@@ -35,7 +35,7 @@ mod app {
     use embedded_hal_0_2::digital::v2::{OutputPin, ToggleableOutputPin};
     use rp235x_hal::{
         clocks,
-        gpio::{self, bank0::{Gpio0, Gpio1}, FunctionSio, PullDown, PullNone, SioInput, SioOutput},
+        gpio::{self, bank0::{Gpio0, Gpio1}, FunctionSio, PullDown, PullUp, SioInput, SioOutput},
         sio::Sio,
         watchdog::Watchdog,
     };
@@ -44,7 +44,7 @@ mod app {
     struct Shared {
         // Shared resources go here
         blinking: bool,
-        button: gpio::Pin<Gpio0, FunctionSio<SioInput>, PullNone>,
+        button: gpio::Pin<Gpio0, FunctionSio<SioInput>, PullUp>,
     }
     #[local]
     struct Local {
