@@ -90,10 +90,6 @@ mod app {
         let button = pins.gpio45.reconfigure();
         button.set_interrupt_enabled(gpio::Interrupt::EdgeLow, true);
 
-        unsafe {
-            cortex_m::peripheral::NVIC::unmask(hal::pac::Interrupt::IO_IRQ_BANK0);
-        }
-
         // Spawn heartbeat task
         heartbeat::spawn().ok();
 
