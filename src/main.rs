@@ -30,11 +30,12 @@ const HFXO_FREQ: u32 = 12_000_000u32;
 #[rtic::app(device = rp235x_hal::pac)]
 mod app {
     use super::*;
+    use embedded_hal::digital::InputPin;
     use panic_halt as _;
     use embedded_hal_0_2::digital::v2::{OutputPin, ToggleableOutputPin};
     use rp235x_hal::{
         clocks,
-        gpio::{self, bank0::Gpio1, FunctionSio, PullDown, SioOutput},
+        gpio::{self, bank0::{Gpio0, Gpio1}, FunctionSio, PullDown, PullNone, SioInput, SioOutput},
         sio::Sio,
         watchdog::Watchdog,
     };
@@ -42,6 +43,8 @@ mod app {
     #[shared]
     struct Shared {
         // Shared resources go here
+        blinking: bool,
+        button: gpio::Pin<Gpio0, FunctionSio<SioInput>, PullNone>,
     }
     #[local]
     struct Local {
@@ -83,18 +86,46 @@ mod app {
         let mut led = pins.gpio1.into_push_pull_output();
         led.set_low().unwrap();
 
+        let button = pins.gpio0.reconfigure();
+        button.set_interrupt_enabled(gpio::Interrupt::EdgeLow, true);
+
         // Spawn heartbeat task
         heartbeat::spawn().ok();
 
+        let blinking = false;
+
         // Waiting for a stabilize power processes
 
-        (Shared {}, Local { led })
+        (Shared { blinking, button }, Local { led })
     }
 
-    #[task(local = [led])]
+    #[task(binds = IO_IRQ_BANK0, shared = [button, blinking])]
+    fn gpio_irq(ctx: gpio_irq::Context) {
+        // Handle GPIO interrupt
+        let mut shared = ctx.shared.button;
+        shared.lock(|button| {
+            button.clear_interrupt(gpio::Interrupt::EdgeLow);
+            if button.is_low().unwrap() {
+                let mut blinking = ctx.shared.blinking;
+                blinking.lock(|b| {
+                    *b = !*b;
+                });
+            }
+        });
+    }
+
+    #[task(local = [led], shared = [blinking])]
     async fn heartbeat(ctx: heartbeat::Context) {
+        let mut blinking = ctx.shared.blinking;
+
         loop {
-            _ = ctx.local.led.toggle();
+            blinking.lock(|b| {
+                if *b {
+                    ctx.local.led.toggle().unwrap();
+                } else {
+                    ctx.local.led.set_low().unwrap();
+                }
+            });
 
             Mono::delay(250.millis()).await;
             // Wait for 250ms
